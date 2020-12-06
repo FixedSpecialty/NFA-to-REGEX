@@ -1,120 +1,139 @@
 package re;
 
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import fa.State;
 import fa.nfa.NFA;
+import fa.nfa.NFAState;
 
 public class RE implements REInterface {
 
 	String input = "";
 	int count = 0;
+	Integer stateNum = 0; 
 
 	public RE(String regEx) {
 		input = regEx;
 	}
+	
+	private char peek(){
+		return input.charAt(0);
+	}
+	private void eat(char c){
+		if(peek() == c){
+			this.input = this.input.substring(1);
+		}	
+	}
+	private char next(){
+		char c = peek();
+		eat(c);
+		return c;
+	}		
+	private boolean more(){
+		return input.length()>0;
+	}
+	private NFA regex(){
+		NFA term = term();
+		if(more() && peek() == '|'){
+			eat('|');
+			NFA regex = regex();
+			NFA addition = new NFA();
+			addition.addStartState(stateNum.toString());
+			stateNum++;
+			addition.addNFAStates(regex.getStates());
+			addition.addNFAStates(term.getStates());
+			addition.addTransition(stateNum.toString(), 'e', regex.getStartState().getName());
+			addition.addTransition(stateNum.toString(), 'e', term.getStartState().getName());
+			addition.addAbc(term.getABC());
+			addition.addAbc(term.getABC());
+			return addition;
+		}
+		else{
+			return term;
+		}
+	}	
+	private NFA term(){
+		NFA factor = new NFA();
+		while (more() && peek() != ')' && peek() != '|'){
+			NFA nextFactor = factor();
+			if(factor.getStates().size() == 0){
+				factor = nextFactor;
+			}
+			else{
+				factor = join(factor, nextFactor);
+			}
+		}
+		return factor;
+	}
+	private NFA base(){
+		switch(peek()){
+			case '(':
+				eat('(');
+				NFA nfa = regex();
+				eat(')');
+				return nfa;
+			default:
+				NFA nfa2 = new NFA();
+				stateNum++;
+				String start = stateNum.toString();
+				stateNum++;
+				String finals = stateNum.toString();
+				nfa2.addStartState(start);
+				stateNum++;
+				nfa2.addFinalState(finals);
+				char in = next();
+				nfa2.addTransition(start, in, finals);
+				Set<Character> abc = new LinkedHashSet<Character>();
+				abc.add(in);
+				nfa2.addAbc(abc);
+				return nfa2;
+		}
+	}
+	private NFA factor(){
+		NFA base = base();
+		while(more() && peek() == '*'){
+			eat('*');
+			base = handleAsterisk(base);
+		}
+		return base;
+	}
+	private NFA join(NFA one, NFA two){
+		one.addNFAStates(two.getStates());
+		for(State s: one.getFinalStates()){
+			((NFAState)s).setNonFinal();
+			one.addTransition(s.getName(), 'e', two.getStartState().getName());			
+		}
+		one.addAbc(two.getABC());
+		return one;
+	}
+	private NFA handleAsterisk(NFA base){
+		NFA nfa = new NFA();
+		String s = stateNum.toString();
+		stateNum++;
+		String f = stateNum.toString();
+		stateNum++;
+		nfa.addStartState(s);
+		nfa.addFinalState(f);
+		nfa.addNFAStates(base.getStates());
+		nfa.addTransition(s,'e',f);
+		nfa.addTransition(f,'e',base.getStartState().getName());
+		nfa.addTransition(s,'e',base.getStartState().getName());
+		nfa.addAbc(base.getABC());
+		for(State s1: base.getFinalStates()){
+			nfa.addTransition(s1.getName(), 'e', f);
+			for(State s2: nfa.getFinalStates()){
+				if(s2.getName().equals(s1.getName())){
+					((NFAState)s2).setNonFinal();
+				}
+			}
+		}
+		return nfa;
+	}
 
 	@Override
 	public NFA getNFA() {
+		// TODO Auto-generated method stub
 		return regex();
 	}
-
-	private NFA term() {
-		NFA factor = new NFA();
-
-		while (more() && peek() != ')' && peek() != '|') {
-			NFA nextFactor = factor() ;
-			if(factor.getStates().isEmpty()){
-				factor = nextFactor;
-			//If there are multiple terms following each other, perform concatenate operation on the NFAs
-			}else{
-				factor = sequence(factor, nextFactor);
-
-			}
-		}
-		}
-
-		return factor ;
-		
-		
-	private NFA sequence(NFA factor, NFA nextFactor) {
-		
-		Set<State> factorF = factor.getFinalStates();
-		String nextFactorI = nextFactor.getStartState().getName();
-
-		//Add all states from second NFA to first NFA
-		factor.addNFAStates(nextFactor.getStates());
-		
-		//Make sure first NFA's final states are not final
-		//But add their transitions to begining of second NFA
-		for(State state: factorF) {
-			((NFAState)state).setNonFinal();
-			factor.addTransition(state.getName(), 'e', nextFactorI);
-		}
-		
-		//Make sure both alphabets are included
-		factor.addAbc(nextFactor.getABC());
-		
-		return factor;
-	}
-
-	}
-
-	private NFA factor() {
-
-		NFA base = base() ;
-
-		while (more() && peek() == '*') {
-			eat('*') ;
-			base = star(base);
-		}
-
-		return base ;
-	}
-
-	private NFA star(NFA base) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	private NFA base() {
-		switch (peek()) {
-		case '(':
-			eat('(') ;
-			NFA r = regex() ;  
-			eat(')') ;
-			return r ;
-
-		default:
-			return nfas(next()) ;
-		}
-	}
-
-	private NFA regex() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	private char peek() {
-		return input.charAt(0) ;
-	}
-
-	private void eat(char c) {
-		if (peek() == c)
-			this.input = this.input.substring(1) ;
-		else
-			throw new 
-			RuntimeException("Expected: " + c + "; got: " + peek()) ;
-	}
-
-	private char next() {
-		char c = peek() ;
-		eat(c) ;
-		return c ;
-	}
-
-	private boolean more() {
-		return input.length() > 0 ;
-	}
-
 }
