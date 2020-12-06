@@ -10,8 +10,7 @@ import fa.nfa.NFAState;
 public class RE implements REInterface {
 
 	String input = "";
-	int count = 0;
-	Integer stateNum = 0; 
+	Integer count = 1;
 
 	public RE(String regEx) {
 		input = regEx;
@@ -39,14 +38,14 @@ public class RE implements REInterface {
 			eat('|');
 			NFA regex = regex();
 			NFA addition = new NFA();
-			addition.addStartState(stateNum.toString());
-			stateNum++;
-			addition.addNFAStates(regex.getStates());
+			addition.addStartState(count.toString());
+			count++;
 			addition.addNFAStates(term.getStates());
-			addition.addTransition(stateNum.toString(), 'e', regex.getStartState().getName());
-			addition.addTransition(stateNum.toString(), 'e', term.getStartState().getName());
+			addition.addNFAStates(regex.getStates());
+			addition.addTransition(count.toString(), 'e', term.getStartState().getName());
+			addition.addTransition(count.toString(), 'e', regex.getStartState().getName());
 			addition.addAbc(term.getABC());
-			addition.addAbc(term.getABC());
+			addition.addAbc(regex.getABC());
 			return addition;
 		}
 		else{
@@ -75,12 +74,11 @@ public class RE implements REInterface {
 				return nfa;
 			default:
 				NFA nfa2 = new NFA();
-				stateNum++;
-				String start = stateNum.toString();
-				stateNum++;
-				String finals = stateNum.toString();
+				String start = count.toString();
+				count++;
+				String finals = count.toString();
+				count++;
 				nfa2.addStartState(start);
-				stateNum++;
 				nfa2.addFinalState(finals);
 				char in = next();
 				nfa2.addTransition(start, in, finals);
@@ -109,10 +107,10 @@ public class RE implements REInterface {
 	}
 	private NFA handleAsterisk(NFA base){
 		NFA nfa = new NFA();
-		String s = stateNum.toString();
-		stateNum++;
-		String f = stateNum.toString();
-		stateNum++;
+		String s = count.toString();
+		count++;
+		String f = count.toString();
+		count++;
 		nfa.addStartState(s);
 		nfa.addFinalState(f);
 		nfa.addNFAStates(base.getStates());
