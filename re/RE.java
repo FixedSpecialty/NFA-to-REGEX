@@ -27,7 +27,7 @@ public class RE implements REInterface {
 	
 	/**
 	 * returns the next item of input without consuming it
-	 * @return
+	 * @return the next item
 	 */
 	private char peek(){
 		return input.charAt(0);
@@ -47,7 +47,7 @@ public class RE implements REInterface {
 	
 	/**
 	 * returns the next item of input and consumes it
-	 * @return
+	 * @return the next item of input
 	 */
 	private char next(){
 		char c = peek();
@@ -57,7 +57,7 @@ public class RE implements REInterface {
 	
 	/**
 	 * checks if there is more input available
-	 * @return
+	 * @return length of input
 	 */
 	private boolean more(){
 		return input.length()>0;
@@ -68,7 +68,7 @@ public class RE implements REInterface {
 	 * @return new NFA if more, old NFA if not
 	 */
 	private NFA regex(){
-		NFA term = term();
+		NFA term = term(); //create an NFA for the current term
 		if(more() && peek() == '|'){
 			eat('|');
 			NFA regex = regex(); //recursive call
@@ -94,10 +94,10 @@ public class RE implements REInterface {
 	 * @return NFA
 	 */
 	private NFA term(){
-		NFA factor = new NFA();
-		while (more() && peek() != ')' && peek() != '|'){
-			NFA nextFactor = factor();
-			if(factor.getStates().size() == 0){
+		NFA factor = new NFA(); //construct new NFA
+		while (more() && peek() != ')' && peek() != '|'){ //if not at the end of 'section'
+			NFA nextFactor = factor(); //set factor to NFA
+			if(factor.getStates().size() == 0){ //if only one
 				factor = nextFactor;
 			}
 			else{
@@ -110,7 +110,7 @@ public class RE implements REInterface {
 	/**
 	 * this is a regex in ( )
 	 * @default 
-	 * @return
+	 * @return NFA for current character string
 	 */
 	private NFA base(){
 		switch(peek()){
@@ -139,10 +139,10 @@ public class RE implements REInterface {
 	
 	/**
 	 * parse a base and then any number of Kleene stars
-	 * @return
+	 * @return base NFA after asterisk parse
 	 */
 	private NFA factor(){
-		NFA base = base();
+		NFA base = base(); //set to base NFA
 		while(more() && peek() == '*'){
 			eat('*');
 			base = handleAsterisk(base);
@@ -170,7 +170,7 @@ public class RE implements REInterface {
 	/**
 	 * Handles the case of (A*)= e or A,AA,AAA,etc.
 	 * @param base
-	 * @return
+	 * @return NFA with necessary states and transitions
 	 */
 	private NFA handleAsterisk(NFA base){
 		NFA nfa = new NFA();
