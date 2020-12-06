@@ -10,7 +10,7 @@ import fa.nfa.NFAState;
 public class RE implements REInterface {
 
 	String input = "";
-	Integer count = 1;
+	int count = 1;
 
 	public RE(String regEx) {
 		input = regEx;
@@ -38,12 +38,13 @@ public class RE implements REInterface {
 			eat('|');
 			NFA regex = regex();
 			NFA addition = new NFA();
-			addition.addStartState(count.toString());
+			addition.addStartState("q"+ count);
+			String name = "q"+count;
 			count++;
 			addition.addNFAStates(term.getStates());
 			addition.addNFAStates(regex.getStates());
-			addition.addTransition(count.toString(), 'e', term.getStartState().getName());
-			addition.addTransition(count.toString(), 'e', regex.getStartState().getName());
+			addition.addTransition(name, 'e', term.getStartState().getName());
+			addition.addTransition(name, 'e', regex.getStartState().getName());
 			addition.addAbc(term.getABC());
 			addition.addAbc(regex.getABC());
 			return addition;
@@ -74,9 +75,9 @@ public class RE implements REInterface {
 				return nfa;
 			default:
 				NFA nfa2 = new NFA();
-				String start = count.toString();
+				String start ="q"+ count;
 				count++;
-				String finals = count.toString();
+				String finals ="q"+ count;
 				count++;
 				nfa2.addStartState(start);
 				nfa2.addFinalState(finals);
@@ -107,9 +108,9 @@ public class RE implements REInterface {
 	}
 	private NFA handleAsterisk(NFA base){
 		NFA nfa = new NFA();
-		String s = count.toString();
+		String s = "q"+count;
 		count++;
-		String f = count.toString();
+		String f = "q"+count;
 		count++;
 		nfa.addStartState(s);
 		nfa.addFinalState(f);
